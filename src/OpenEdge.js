@@ -1,7 +1,6 @@
 import { constants } from 'http2';
 import Helper from './config/constant';
 const uuidv4 = require('uuid/v4');
-const axios = require('axios');
 const querystring = require("querystring");
 var https = require("https");
 var url = require('url');
@@ -13,8 +12,8 @@ var allowCrossDomain = function (req, res, next) {
   next();
 }
 
-const convertObjectIdToString = function(objectID) {
-  return objectID.toString().substring(0,8);
+const convertObjectIdToString = function (objectID) {
+  return objectID.toString().substring(0, 8);
 };
 
 const isNull = function (val) {
@@ -29,6 +28,9 @@ let masterCredentials = {};
 export default class OpenEdge {
   constructor(config) {
     this.config = config;
+    masterCredentials["X_WEB_ID"] = this.config.X_web_ID;
+    masterCredentials["TERMINAL_ID"] = this.config.Terminal_ID;
+    masterCredentials["AUTH_KEY"] = this.config.Auth_Key;
   }
 
   createMerchant(payloadJson) {
@@ -86,85 +88,77 @@ export default class OpenEdge {
   }
 
   makePayment(payload) {
-    console.log("payload",payload.paymentInfo);
-      return new Promise((resolve, reject) => {
-        console.log(typeof payload.cardInfo.transaction_type);
-        console.log(typeof  payload.cardInfo.entrymode);
-        console.log(typeof payload.paymentInfo.transactionId);
-        console.log(typeof payload.paymentInfo.totalAmount);
-        const post_data = querystring.stringify({
-          // 'account_token': 'C9CBE35FCE67540F328FE4FC8758AF6DCECC24954FB2C4FFE4A24F2B81D95FEA9953BC5CF45601D078',
-          'xweb_id':"800000022536",
-          'terminal_id':"80031235",
-          'auth_key':"UWkZhCx6vK1BTa5DkMOaxMFbpOPo3H8N",
-          'transaction_type':payload.cardInfo.transaction_type ? payload.cardInfo.transaction_type :'',
-          'entry_mode': payload.cardInfo.entrymode ? payload.cardInfo.entrymode  :'',
-          'charge_type': 'CREDIT',
-          'order_id': payload.paymentInfo.transactionId ? convertObjectIdToString(payload.paymentInfo.transactionId) : '',
-          'manage_payer_data': 'true',
-          'return_url': payload.paymentInfo.return_url,
-          'return_target': '_self',
-          'charge_total': payload.paymentInfo.totalAmount ? payload.paymentInfo.totalAmount :'',
-          'disable_framing': 'false',
-          'bill_customer_title_visible': 'false',
-          'bill_first_name_visible': 'false',
-          'bill_last_name_visible': 'false',
-          'bill_middle_name_visible': 'false',
-          'bill_company_visible': 'false',
-          'bill_address_one_visible': 'false',
-          'bill_address_two_visible': 'false',
-          'bill_city_visible': 'false',
-          'bill_state_or_province_visible': 'false',
-          'bill_country_code_visible': 'false',
-          'bill_postal_code_visible': 'false',
-          'order_information_visible': 'false',
-          'card_information_visible': 'false',
-          'card_information_label_visible': 'false',
-          'customer_information_visible': 'false'
-        });
+    return new Promise((resolve, reject) => {
+      const post_data = querystring.stringify({
+        'xweb_id': masterCredentials.X_WEB_ID,
+        'terminal_id': masterCredentials.TERMINAL_ID,
+        'auth_key': masterCredentials.AUTH_KEY,
+        'transaction_type': payload.cardInfo.transaction_type ? payload.cardInfo.transaction_type : '',
+        'entry_mode': payload.cardInfo.entrymode ? payload.cardInfo.entrymode : '',
+        'charge_type': 'CREDIT',
+        'order_id': payload.paymentInfo.transactionId ? convertObjectIdToString(payload.paymentInfo.transactionId) : '',
+        'manage_payer_data': 'true',
+        'return_url': payload.paymentInfo.return_url ? payload.paymentInfo.return_url : '',
+        'return_target': '_self',
+        'charge_total': payload.paymentInfo.totalAmount ? payload.paymentInfo.totalAmount : '',
+        'disable_framing': 'false',
+        'bill_customer_title_visible': 'false',
+        'bill_first_name_visible': 'false',
+        'bill_last_name_visible': 'false',
+        'bill_middle_name_visible': 'false',
+        'bill_company_visible': 'false',
+        'bill_address_one_visible': 'false',
+        'bill_address_two_visible': 'false',
+        'bill_city_visible': 'false',
+        'bill_state_or_province_visible': 'false',
+        'bill_country_code_visible': 'false',
+        'bill_postal_code_visible': 'false',
+        'order_information_visible': 'false',
+        'card_information_visible': 'false',
+        'card_information_label_visible': 'false',
+        'customer_information_visible': 'false'
+      });
 
 
-        var post_options = {
-          host: 'ws.test.paygateway.com',
-          port: 443,
-          path: '/HostPayService/v1/hostpay/transactions',
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'Content-Length': post_data.length
-          }
-        };
-        
+      var post_options = {
+        host: 'ws.test.paygateway.com',
+        port: 443,
+        path: '/HostPayService/v1/hostpay/transactions',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Content-Length': post_data.length
+        }
+      };
+
       var payment_url = '';
-      var post_req = https.request(post_options, function (res) {      
+      var post_req = https.request(post_options, function (res) {
         res.setEncoding('utf8');
         res.on('data', function (chunk) {
-          console.log('Response:' + chunk);
           var obj = JSON.parse(chunk);
           payment_url = `${obj.actionUrl}${obj.sealedSetupParameters}`;
-          console.log("payment",obj.actionUrl + obj.sealedSetupParameters); 
-          if(payment_url!== undefined && payment_url !== "" && payment_url !== null){
-            let body={
-              'payRedirectUrl':payment_url,
-              'gatewayTransactionId':''
+          if (payment_url !== undefined && payment_url !== "" && payment_url !== null) {
+            let body = {
+              'payRedirectUrl': payment_url,
+              'gatewayTransactionId': ''
             };
-              resolve({"success":true,'body':body});
+            resolve({ "success": true, 'body': body });
           }
           else {
-            let errorBody={
-              'payRedirectUrl':'',
-              'gatewayTransactionId':''
+            let errorBody = {
+              'payRedirectUrl': '',
+              'gatewayTransactionId': ''
             };
-              resolve({"success":false,'body':errorBody});
+            resolve({ "success": false, 'body': errorBody });
           }
-         
+
         });
       });
       post_req.write(post_data);
-     
+
       post_req.end();
-     
-      });
+
+    });
   }
 
   getPayersListing(payloadJson) {
