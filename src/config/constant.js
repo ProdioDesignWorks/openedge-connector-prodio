@@ -17,11 +17,11 @@ exports.MASTER_MERCHANT_ACCESS = {
         'BoardingMerchantStatusURL':'https://apisandbox.integritypays.com/v1/boarding/{{MERCHANT_ID}}/status',
     },
     CONFIG:{
-        BASE_URL:"http://localhost:3000",
-        PAYMENT_URL:"/payment",
-        HOST:"ws.test.paygateway.com",
-        TRANSACTION_URL:"/HostPayService/v1/hostpay/transactions",
-        ACCOUNT_TOKEN:"C9CBE35FCE67540F328FE4FC8758AF6DCECC24954FB2C4FFE4A24F2B81D95FEA9953BC5CF45601D078"
+        'BASE_URL':"http://localhost:3000",
+        'PAYMENT_URL':"/payment",
+        'HOST':"ws.test.paygateway.com",
+        'TRANSACTION_URL':"/HostPayService/v1/hostpay/transactions",
+        'ACCOUNT_TOKEN':"C9CBE35FCE67540F328FE4FC8758AF6DCECC24954FB2C4FFE4A24F2B81D95FEA9953BC5CF45601D078"
 
     }
     
