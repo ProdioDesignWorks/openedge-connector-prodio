@@ -1,8 +1,20 @@
 import { constants } from 'http2';
 import Helper from './config/constant';
 const uuidv4 = require('uuid/v4');
-const axios = require('axios');
 const querystring = require("querystring");
+var https = require("https");
+var url = require('url');
+var allowCrossDomain = function (req, res, next) {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
+  res.header('Access-Control-Allow-Headers', 'Content-Type');
+
+  next();
+}
+
+const convertObjectIdToString = function (objectID) {
+  return objectID.toString().substring(0, 8);
+};
 
 const isNull = function (val) {
   if (typeof val === 'string') { val = val.trim(); }
@@ -16,6 +28,9 @@ let masterCredentials = {};
 export default class OpenEdge {
   constructor(config) {
     this.config = config;
+    masterCredentials["X_WEB_ID"] = this.config.X_web_ID;
+    masterCredentials["TERMINAL_ID"] = this.config.Terminal_ID;
+    masterCredentials["AUTH_KEY"] = this.config.Auth_Key;
   }
 
   createMerchant(payloadJson) {
@@ -72,20 +87,20 @@ export default class OpenEdge {
     return 'this is test';
   }
 
- makeDirectPayment(payload){
-    let apiUrl = `${Helper.CONFIG.BASE_URL}${Helper.CONFIG.PAYMENT_URL}`
-    axios.post(apiUrl).then(response => {
-      //Parameters for a simple Credit_card Transaction
+  makePayment(payload) {
+    return new Promise((resolve, reject) => {
       const post_data = querystring.stringify({
-        'account_token': Helper.CONFIG.ACCOUNT_TOKEN, //Account Token Should be Configured with your own testing account token.
-        'transaction_type': 'CREDIT_CARD',
-        'entry_mode': payload.entrymode,
-        'charge_type': payload.chargetype,
-        'order_id': payload.orderid,
+        'xweb_id': masterCredentials.X_WEB_ID,
+        'terminal_id': masterCredentials.TERMINAL_ID,
+        'auth_key': masterCredentials.AUTH_KEY,
+        'transaction_type': payload.cardInfo.transaction_type ? payload.cardInfo.transaction_type : '',
+        'entry_mode': payload.cardInfo.entrymode ? payload.cardInfo.entrymode : '',
+        'charge_type': 'CREDIT',
+        'order_id': payload.paymentInfo.transactionId ? convertObjectIdToString(payload.paymentInfo.transactionId) : '',
         'manage_payer_data': 'true',
-        'return_url': 'http:/localhost:3000/result',
+        'return_url': payload.paymentInfo.return_url ? payload.paymentInfo.return_url : '',
         'return_target': '_self',
-        'charge_total': payload.amount,
+        'charge_total': payload.paymentInfo.totalAmount ? payload.paymentInfo.totalAmount : '',
         'disable_framing': 'false',
         'bill_customer_title_visible': 'false',
         'bill_first_name_visible': 'false',
@@ -103,24 +118,49 @@ export default class OpenEdge {
         'card_information_label_visible': 'false',
         'customer_information_visible': 'false'
       });
-      let payment_url = `${Helper.CONFIG.HOST}${Helper.CONFIG.TRANSACTION_URL}${post_data}`;
-      return new Promise((resolve, reject) => {
-        axios.post(payment_url).then(response => {
-          console.log(response);
-          try{
-            var obj = JSON.parse(response.data);
-            console.log(obj.actionUrl + obj.sealedSetupParameters)
-            let paymentUrl = obj.actionUrl + obj.sealedSetupParameters;
-            resolve ({"success":true,"paymentRedirectUrl":paymentUrl});
+
+
+      var post_options = {
+        host: 'ws.test.paygateway.com',
+        port: 443,
+        path: '/HostPayService/v1/hostpay/transactions',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Content-Length': post_data.length
+        }
+      };
+
+      var payment_url = '';
+      var post_req = https.request(post_options, function (res) {
+        res.setEncoding('utf8');
+        res.on('data', function (chunk) {
+          var obj = JSON.parse(chunk);
+          payment_url = `${obj.actionUrl}${obj.sealedSetupParameters}`;
+          if (payment_url !== undefined && payment_url !== "" && payment_url !== null) {
+            let body = {
+              'payRedirectUrl': payment_url,
+              'gatewayTransactionId': ''
+            };
+            resolve({ "success": true, 'body': body });
           }
-          catch(error){
-            reject({ "success": false, "body": error });
+          else {
+            let errorBody = {
+              'payRedirectUrl': '',
+              'gatewayTransactionId': ''
+            };
+            resolve({ "success": false, 'body': errorBody });
           }
+
         });
-      })
+      });
+      post_req.write(post_data);
+
+      post_req.end();
+
     });
   }
- 
+
   getPayersListing(payloadJson) {
     return 'this is test';
   }
