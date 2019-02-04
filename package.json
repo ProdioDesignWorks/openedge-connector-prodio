@@ -1,7 +1,7 @@
 {
   "name": "open-edge-connector-prodio",
   "version": "0.0.2",
-  "description": "Adapter for consuming PayU API's",
+  "description": "Adapter for consuming OpenEdge API's",
   "main": "lib/index.js",
   "scripts": {
     "build": ". scripts/build.sh",

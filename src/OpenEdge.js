@@ -28,9 +28,9 @@ let masterCredentials = {};
 export default class OpenEdge {
   constructor(config) {
     this.config = config;
-    masterCredentials["X_WEB_ID"] = this.config.X_web_ID;
-    masterCredentials["TERMINAL_ID"] = this.config.Terminal_ID;
-    masterCredentials["AUTH_KEY"] = this.config.Auth_Key;
+    masterCredentials["X_WEB_ID"] = this.config.XwebID;
+    masterCredentials["TERMINAL_ID"] = this.config.TerminalID;
+    masterCredentials["AUTH_KEY"] = this.config.AuthKey;
   }
 
   createMerchant(payloadJson) {
@@ -88,6 +88,9 @@ export default class OpenEdge {
   }
 
   makePayment(payload) {
+    console.log("payload....",payload.paymentInfo.transactionId);
+    console.log("payload....",payload.paymentInfo.totalAmount);
+    console.log("master credentials",masterCredentials);
     return new Promise((resolve, reject) => {
       const post_data = querystring.stringify({
         'xweb_id': masterCredentials.X_WEB_ID,
@@ -134,9 +137,12 @@ export default class OpenEdge {
       var payment_url = '';
       var post_req = https.request(post_options, function (res) {
         res.setEncoding('utf8');
+        // console.log("res",res);
         res.on('data', function (chunk) {
           var obj = JSON.parse(chunk);
+          console.log("obj",obj);
           payment_url = `${obj.actionUrl}${obj.sealedSetupParameters}`;
+          console.log("payment_url",payment_url);
           if (payment_url !== undefined && payment_url !== "" && payment_url !== null) {
             let body = {
               'payRedirectUrl': payment_url,
@@ -161,6 +167,88 @@ export default class OpenEdge {
     });
   }
 
+  makeRefund(payload) {
+    console.log("entered in refund meta",payload.meta);
+    console.log("entered in refund",payload);
+    console.log("metaaaaaaaaaaaaaaaaaaa",convertObjectIdToString(payload.meta.transactionId));
+    console.log("payload.meta.cardInfo.entrymode",payload.meta.cardInfo.entrymode);
+    console.log("payload.meta.cardInfo.transaction_type",payload.meta.cardInfo.transaction_type);
+    console.log("payload.meta.return_url",payload.meta.return_url);
+    console.log("payload.meta.totalAmoun",payload.meta.amount);
+
+    return new Promise((resolve, reject) => {
+      const post_data = querystring.stringify({
+        'xweb_id': masterCredentials.X_WEB_ID,
+        'terminal_id': masterCredentials.TERMINAL_ID,
+        'auth_key': masterCredentials.AUTH_KEY, 
+        'transaction_type': payload.meta.cardInfo.transaction_type ? payload.meta.cardInfo.transaction_type : '',
+        'entry_mode': payload.meta.cardInfo.entrymode ? payload.meta.cardInfo.entrymode : '',
+        'charge_type': 'REFUND',
+        'pos_device_model':'generic_msr_clr_kbe',
+        'order_id': payload.meta.transactionId ? convertObjectIdToString(payload.meta.transactionId) : '',
+        'manage_payer_data': 'true',
+        'return_url': payload.meta.return_url ? payload.meta.return_url : '',
+        'return_target': '_self',
+        'charge_total': payload.meta.amount ? payload.meta.amount : '',
+        'disable_framing': 'false',
+        'bill_customer_title_visible': 'false',
+        'bill_first_name_visible': 'false',
+        'bill_last_name_visible': 'false',
+        'bill_middle_name_visible': 'false',
+        'bill_company_visible': 'false',
+        'bill_address_one_visible': 'false',
+        'bill_address_two_visible': 'false',
+        'bill_city_visible': 'false',
+        'bill_state_or_province_visible': 'false',
+        'bill_country_code_visible': 'false',
+        'bill_postal_code_visible': 'false',
+        'order_information_visible': 'false',
+        'card_information_visible': 'false',
+        'card_information_label_visible': 'false',
+        'customer_information_visible': 'false'
+      });
+
+
+      var post_options = {
+        host: 'ws.paygateway.com',
+        port: 443,
+        path: '/HostPayService/v1/hostpay/transactions',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Content-Length': post_data.length
+        }
+      };
+
+      var payment_url = '';
+      var post_req = https.request(post_options, function (res) {
+        res.setEncoding('utf8');
+        res.on('data', function (chunk) {
+          var obj = JSON.parse(chunk);
+           console.log("obj",obj);
+          payment_url = `${obj.actionUrl}${obj.sealedSetupParameters}`;
+          if (payment_url !== undefined && payment_url !== "" && payment_url !== null) {
+            let body = {
+              'payRedirectUrl': payment_url,
+              'gatewayTransactionId': ''
+            };
+            resolve({ "success": true, 'body': body });
+          }
+          else {
+            let errorBody = {
+              'payRedirectUrl': '',
+              'gatewayTransactionId': ''
+            };
+            resolve({ "success": false, 'body': errorBody });
+          }
+
+        });
+      });
+      post_req.write(post_data);
+      post_req.end();
+
+    });
+  }
   getPayersListing(payloadJson) {
     return 'this is test';
   }
