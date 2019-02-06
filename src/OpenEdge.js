@@ -98,6 +98,7 @@ export default class OpenEdge {
         'auth_key': masterCredentials.AUTH_KEY,
         'transaction_type':'CREDIT_CARD',
         'entry_mode': 'KEYED',
+        'postback_url':payload.paymentInfo.postback_url ? payload.paymentInfo.postback_url :'',
         'charge_type': 'CREDIT',
         'order_id': payload.paymentInfo.transactionId ? convertObjectIdToString(payload.paymentInfo.transactionId) : '',
         'manage_payer_data': 'true',
