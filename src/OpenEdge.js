@@ -88,9 +88,7 @@ export default class OpenEdge {
   }
 
   makePayment(payload) {
-    console.log("payload....",payload.paymentInfo.transactionId);
-    console.log("payload....",payload.paymentInfo.totalAmount);
-    console.log("master credentials",masterCredentials);
+    
     return new Promise((resolve, reject) => {
       const post_data = querystring.stringify({
         'xweb_id': masterCredentials.X_WEB_ID,
@@ -102,6 +100,9 @@ export default class OpenEdge {
         'charge_type': 'CREDIT',
         'order_id': payload.paymentInfo.transactionId ? convertObjectIdToString(payload.paymentInfo.transactionId) : '',
         'manage_payer_data': 'true',
+        'payer_identifier': payload.paymentInfo.payerId,
+        'order_user_id': payload.paymentInfo.payerId,
+        'order_description':'This is order description',
         'return_url': payload.paymentInfo.return_url ? payload.paymentInfo.return_url : '',
         'return_target': '_self',
         'charge_total': payload.paymentInfo.totalAmount ? payload.paymentInfo.totalAmount : '',
@@ -120,9 +121,16 @@ export default class OpenEdge {
         'order_information_visible': 'false',
         'card_information_visible': 'false',
         'card_information_label_visible': 'false',
-        'customer_information_visible': 'false'
+        'customer_information_visible': 'false',
+        'CreateAlias':'true',
+        'Alias': payload.paymentInfo.transactionId,
+        'UpdateAlias':'true'
       });
+      //  'span':'4444', //----> This is imp, here we have to send last 4 digits of the card
+      //  'user_defined_one': payload.paymentInfo.transactionId, //user_defined_two,user_defined_three
 
+      console.log("post_data \n \n ");
+      console.log(post_data);
 
       var post_options = {
         host: 'ws.test.paygateway.com',
@@ -156,7 +164,7 @@ export default class OpenEdge {
               'payRedirectUrl': '',
               'gatewayTransactionId': ''
             };
-            resolve({ "success": false, 'body': errorBody });
+            reject({ "success": false,"message": obj["errorMessage"] , 'body': errorBody });
           }
 
         });
