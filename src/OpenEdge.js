@@ -87,6 +87,7 @@ export default class OpenEdge {
     return 'this is test';
   }
 
+
   makePayment(payload) {
     
     return new Promise((resolve, reject) => {
@@ -97,10 +98,9 @@ export default class OpenEdge {
         'transaction_type':'CREDIT_CARD',
         'entry_mode': 'KEYED',
         'postback_url':payload.paymentInfo.postback_url ? payload.paymentInfo.postback_url :'',
-        'charge_type': 'CREDIT',
+        'charge_type': 'SALE', //CREDIT
         'order_id': payload.paymentInfo.transactionId ? convertObjectIdToString(payload.paymentInfo.transactionId) : '',
         'manage_payer_data': 'true',
-        'payer_identifier': payload.paymentInfo.payerId,
         'order_user_id': payload.paymentInfo.payerId,
         'order_description':'This is order description',
         'return_url': payload.paymentInfo.return_url ? payload.paymentInfo.return_url : '',
@@ -121,10 +121,7 @@ export default class OpenEdge {
         'order_information_visible': 'false',
         'card_information_visible': 'false',
         'card_information_label_visible': 'false',
-        'customer_information_visible': 'false',
-        'CreateAlias':'true',
-        'Alias': payload.paymentInfo.transactionId,
-        'UpdateAlias':'true'
+        'customer_information_visible': 'false'
       });
       //  'span':'4444', //----> This is imp, here we have to send last 4 digits of the card
       //  'user_defined_one': payload.paymentInfo.transactionId, //user_defined_two,user_defined_three
