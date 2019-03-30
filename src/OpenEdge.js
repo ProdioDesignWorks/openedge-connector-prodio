@@ -89,17 +89,39 @@ export default class OpenEdge {
 
   makePayment(payload) {
 
+    let cardType = "CREDIT_CARD";
+    if(!isNull(payload["cardType"])){
+      cardType = payload["cardType"];
+    }
+    let _amt = '0.00';
+    
+    if(!isNull(payload["paymentInfo"]["downPayment"])){
+      _amt = payload["paymentInfo"]["downPayment"];
+    }else{
+      if(!isNull(payload["paymentInfo"]["totalAmount"])){
+        _amt = payload["paymentInfo"]["totalAmount"];
+      }
+    }
+
+    //IMP - "AUTH" Only works with CREDIT_CARD
+    let charge_type = "AUTH";
+    if(cardType=="DEBIT_CARD"){
+      charge_type="PURCHASE";
+    }
+
     return new Promise((resolve, reject) => {
     let sampleJson = {
         'xweb_id': masterCredentials.X_WEB_ID,
         'terminal_id': masterCredentials.TERMINAL_ID,
         'auth_key': masterCredentials.AUTH_KEY,
-        'transaction_type':'CREDIT_CARD',
-        //'order_id': payload.paymentInfo.transactionId ? convertObjectIdToString(payload.paymentInfo.transactionId) : '',
+        'transaction_type': cardType ,
         'order_id': (new Date().getTime()),
-        'charge_type':'AUTH',
-        'entry_mode': 'KEYED',
-        'charge_total':'0.00',
+        'charge_type':charge_type,
+        //'entry_mode': 'KEYED',
+        'charge_total':_amt,
+       // 'account_type':'2', //for debit card
+        'purchase_order_number':payload.paymentInfo.transactionId ? convertObjectIdToString(payload.paymentInfo.transactionId) : '',
+        'invoice_number':payload.paymentInfo.transactionId ? convertObjectIdToString(payload.paymentInfo.transactionId) : '',
         'manage_payer_data':'TRUE',
         'bill_customer_title_visible': 'false',
         'bill_first_name_visible': 'false',
@@ -121,6 +143,13 @@ export default class OpenEdge {
         // 'return_url': payload.paymentInfo.return_url ? payload.paymentInfo.return_url : '',
         // 'return_target': '_self'
       };
+      if(cardType=="CREDIT_CARD"){
+        sampleJson["manage_payer_data"] = 'true';
+        sampleJson["entry_mode"] = 'KEYED';
+      }else{
+        sampleJson["account_type"]='2';
+        sampleJson["entry_mode"] = 'EMV';
+      }
 
       const post_data = querystring.stringify(sampleJson);
       console.log(sampleJson);
@@ -139,10 +168,10 @@ export default class OpenEdge {
       var payment_url = '';
       var post_req = https.request(post_options, function (res) {
         res.setEncoding('utf8');
-        // console.log("res",res);
+        //console.log("res",res);
         res.on('data', function (chunk) {
           var obj = JSON.parse(chunk);
-          //console.log("obj",obj);
+          console.log("obj",obj);
           payment_url = `${obj.actionUrl}${obj.sealedSetupParameters}`;
           console.log("payment_url",payment_url);
           if (payment_url !== undefined && payment_url !== "" && payment_url !== null) {
@@ -152,6 +181,7 @@ export default class OpenEdge {
             resolve({ "success": true, 'body': body });
           }
           else {
+            //console.log("obj",obj);
             let errorBody = {
               'payRedirectUrl': '',
             };
@@ -174,7 +204,7 @@ export default class OpenEdge {
         'terminal_id': masterCredentials.TERMINAL_ID,
         'auth_key': masterCredentials.AUTH_KEY, 
         'account_type':'2',
-        'charge_type': 'CREDIT',
+        'charge_type': 'CREDIT', //for credit_card and "REFUND" for debit card
         'transaction_type': payload.paymentInfo.transaction_type ? payload.paymentInfo.transaction_type : '',
         'order_id': payload.paymentInfo.transactionId ? convertObjectIdToString(payload.paymentInfo.transactionId) : '',
         // 'manage_payer_data': 'true',
@@ -330,7 +360,7 @@ export default class OpenEdge {
         // console.log("res",res);
         res.on('data', function (chunk) {
           var obj = JSON.parse(chunk);
-          //console.log("obj",obj);
+          console.log("obj",obj);
           payment_url = `${obj.actionUrl}${obj.sealedSetupParameters}`;
           console.log("payment_url",payment_url);
           if (payment_url !== undefined && payment_url !== "" && payment_url !== null) {
