@@ -117,6 +117,7 @@ export default class OpenEdge {
         'transaction_type': cardType ,
         'order_id': (new Date().getTime()),
         'charge_type':charge_type,
+        'disable_framing': 'false',
         //'entry_mode': 'KEYED',
         'charge_total':_amt,
        // 'account_type':'2', //for debit card
@@ -316,6 +317,7 @@ export default class OpenEdge {
         'transaction_type':'CREDIT_CARD',
         'order_id': (new Date()).getTime(),
         'charge_type':'AUTH',
+        'disable_framing': 'false',
         'entry_mode': 'KEYED',
         'charge_total':'0.00',
         'manage_payer_data':'TRUE',
