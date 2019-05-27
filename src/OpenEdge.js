@@ -95,13 +95,14 @@ export default class OpenEdge {
     }
     let _amt = '0.00';
     
-    if(!isNull(payload["paymentInfo"]["downPayment"])){
-      _amt = payload["paymentInfo"]["downPayment"];
-    }else{
-      if(!isNull(payload["paymentInfo"]["totalAmount"])){
-        _amt = payload["paymentInfo"]["totalAmount"];
-      }
-    }
+    //----- removed to use ZeroAuth -----------
+    // if(!isNull(payload["paymentInfo"]["downPayment"])){
+    //   _amt = payload["paymentInfo"]["downPayment"];
+    // }else{
+    //   if(!isNull(payload["paymentInfo"]["totalAmount"])){
+    //     _amt = payload["paymentInfo"]["totalAmount"];
+    //   }
+    // }
 
     //IMP - "AUTH" Only works with CREDIT_CARD
     let charge_type = "AUTH";
@@ -153,7 +154,6 @@ export default class OpenEdge {
       }
 
       const post_data = querystring.stringify(sampleJson);
-      console.log(sampleJson);
 
       var post_options = {
         host: 'ws.test.paygateway.com',
@@ -172,9 +172,7 @@ export default class OpenEdge {
         //console.log("res",res);
         res.on('data', function (chunk) {
           var obj = JSON.parse(chunk);
-          console.log("obj",obj);
           payment_url = `${obj.actionUrl}${obj.sealedSetupParameters}`;
-          console.log("payment_url",payment_url);
           if (payment_url !== undefined && payment_url !== "" && payment_url !== null) {
             let body = {
               'payRedirectUrl': payment_url,
@@ -231,7 +229,6 @@ export default class OpenEdge {
       var post_req = https.request(post_options, function (res) {
         res.setEncoding('utf8');
         res.on('data', function (chunk) {
-          console.log('Response:' + chunk); 
           var paymentStateParse = {}; //Parses Payment State from result of QueryPayment.
           chunk.split('&').forEach(function(x){
               var arr = x.split('=');
@@ -278,13 +275,11 @@ export default class OpenEdge {
       var post_req = https.request(post_options, function(res) {
       res.setEncoding('utf8');
       res.on('data', function (chunk) {
-          console.log('Response:' + chunk); 
           var paymentStateParse = {}; //Parses Payment State from result of QueryPayment.
           chunk.split('&').forEach(function(x){
               var arr = x.split('=');
               arr[1] &&(paymentStateParse[arr[0]] = arr[1]);
           });
-          console.log(paymentStateParse.state);
           resolve(paymentStateParse);
           // if (paymentStateParse.state == 'payment_approved' || paymentStateParse.state == 'payment_deposited')
           // {
@@ -343,7 +338,6 @@ export default class OpenEdge {
       };
 
       const post_data = querystring.stringify(sampleJson);
-      console.log(sampleJson);
 
       var post_options = {
         host: 'ws.test.paygateway.com',
@@ -362,9 +356,7 @@ export default class OpenEdge {
         // console.log("res",res);
         res.on('data', function (chunk) {
           var obj = JSON.parse(chunk);
-          console.log("obj",obj);
           payment_url = `${obj.actionUrl}${obj.sealedSetupParameters}`;
-          console.log("payment_url",payment_url);
           if (payment_url !== undefined && payment_url !== "" && payment_url !== null) {
             let body = {
               'payRedirectUrl': payment_url,
@@ -407,8 +399,6 @@ export default class OpenEdge {
       if(!isNull(payloadJson["paymentInfo"]["ecommerce_indicator"])){
         inputJson["ecommerce_indicator"] = payloadJson["paymentInfo"]["ecommerce_indicator"];
       }
-      console.log(payloadJson);
-       console.log(inputJson);
 
         var post_data = querystring.stringify(inputJson);
         //post options for Query_payment
@@ -432,7 +422,7 @@ export default class OpenEdge {
                 var arr = x.split('=');
                 arr[1] &&(paymentStateParse[arr[0]] = arr[1]);
             });
-            console.log(paymentStateParse.state);
+            
             resolve(paymentStateParse);
             });
         });
@@ -483,7 +473,7 @@ export default class OpenEdge {
                 var arr = x.split('=');
                 arr[1] &&(paymentStateParse[arr[0]] = arr[1]);
             });
-            console.log(paymentStateParse.state);
+            
             resolve(paymentStateParse);
             });
         });
