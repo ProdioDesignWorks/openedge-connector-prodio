@@ -162,6 +162,7 @@ export default class OpenEdge {
                 'invoice_number': payload.paymentInfo.transactionId ? convertObjectIdToString(payload.paymentInfo.transactionId) : '',
                 'transaction_type':"ACH",
                 'charge_type': charge_type ,
+                'manage_payer_data':payload.paymentInfo.manage_payer_data,
                 'charge_total':_amt,
                 'transaction_condition_code': transaction_condition_code,
                 'account_type': account_type , //1=saving
@@ -325,6 +326,90 @@ export default class OpenEdge {
 
             post_req.end();
         });
+    }
+    
+    payDirectWithSaveCardACH = (payload)=>{
+            let _amt = '0.00';
+      
+            if(!isNull(payload["paymentInfo"]["downPayment"])){
+                _amt = payload["paymentInfo"]["downPayment"];
+              }else{
+                if(!isNull(payload["paymentInfo"]["totalAmount"])){
+                  _amt = payload["paymentInfo"]["totalAmount"];
+                }
+              }
+      
+              let charge_type ="DEBIT";
+              if(!isNull(payload["paymentInfo"]["charge_type"])){
+                  charge_type = payload["paymentInfo"]["charge_type"];
+              }
+      
+              let account_type ="0";
+              if(!isNull(payload["paymentInfo"]["account_type"])){
+                  account_type = payload["paymentInfo"]["account_type"];
+              }
+      
+              let transaction_condition_code = "52";
+              if(!isNull(payload["paymentInfo"]["transaction_condition_code"])){
+                  transaction_condition_code = payload["paymentInfo"]["transaction_condition_code"];
+              }
+      
+              return new Promise((resolve, reject) => {
+                  let sampleJson = {
+                      'xweb_id': masterCredentials.X_WEB_ID,
+                      'terminal_id': masterCredentials.ACH_TERMINAL_ID,
+                      'auth_key': masterCredentials.ACH_AUTH_KEY,
+                      'order_id': (new Date().getTime()),
+                      'entry_mode':'KEYED',
+                      'purchase_order_number': payload.paymentInfo.transactionId ? convertObjectIdToString(payload.paymentInfo.transactionId) : '',
+                      'invoice_number': payload.paymentInfo.transactionId ? convertObjectIdToString(payload.paymentInfo.transactionId) : '',
+                      'transaction_type':"ACH",
+                      'charge_type': charge_type ,
+                      'payer_identifier': payload.paymentInfo.payer_identifier,
+                      'entry_mode':'KEYED',
+                      'charge_total':_amt,
+                      'transaction_condition_code': transaction_condition_code,
+                      'account_type': account_type ,
+                  };
+      
+                  const post_data = querystring.stringify(sampleJson);
+      
+                  var post_options = {
+                      host: 'ws.test.paygateway.com',
+                      port: 443,
+                      path: '/api/v1/transactions',
+                      method: 'POST',
+                      headers: {
+                          'Content-Type': 'application/x-www-form-urlencoded',
+                          'Content-Length': post_data.length
+                      }
+                  };
+                  var payment_url = '';
+                  var post_req = https.request(post_options, function(res) {
+                      res.setEncoding('utf8');
+                      //console.log("res",res);
+                      res.on('data', function(chunk) {
+                          var obj = JSON.parse(chunk);
+                          var paymentStateParse = {}; //Parses Payment State from result of QueryPayment.
+                          chunk.split('&').forEach(function(x) {
+                              var arr = x.split('=');
+                              arr[1] && (paymentStateParse[arr[0]] = arr[1]);
+                          });
+                          //payment_url = `${obj.actionUrl}${obj.sealedSetupParameters}`;
+                          if (parseInt(paymentStateParse.response_code) == 1) {
+                              resolve(paymentStateParse);
+                          } else {
+                              reject({
+                                  "message": paymentStateParse["response_code_text"],
+                                  body: paymentStateParse
+                              })
+                          }
+      
+                      });
+                  });
+                  post_req.write(post_data);
+                  post_req.end();
+              });
     }
 
     makeRefund(payload) {
@@ -534,9 +619,6 @@ export default class OpenEdge {
                 'charge_total': payloadJson["paymentInfo"]["amount"],
                 'payer_identifier': payloadJson["cardInfo"]["payer_identifier"]
             };
-
-
-
             if (!isNull(payloadJson["paymentInfo"]["ecommerce_indicator"])) {
                 inputJson["ecommerce_indicator"] = payloadJson["paymentInfo"]["ecommerce_indicator"];
             }
