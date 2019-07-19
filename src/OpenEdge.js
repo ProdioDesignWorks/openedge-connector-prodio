@@ -156,21 +156,20 @@ export default class OpenEdge {
                 'xweb_id': masterCredentials.X_WEB_ID,
                 'terminal_id': masterCredentials.ACH_TERMINAL_ID,
                 'auth_key': masterCredentials.ACH_AUTH_KEY,
-                'order_id': (new Date().getTime()),
-                'entry_mode':'KEYED',
-                'purchase_order_number': payload.paymentInfo.transactionId ? convertObjectIdToString(payload.paymentInfo.transactionId) : '',
-                'invoice_number': payload.paymentInfo.transactionId ? convertObjectIdToString(payload.paymentInfo.transactionId) : '',
                 'transaction_type':"ACH",
                 'charge_type': charge_type ,
-                'manage_payer_data':payload.paymentInfo.manage_payer_data,
                 'charge_total':_amt,
                 'transaction_condition_code': transaction_condition_code,
-                'account_type': account_type , //1=saving
+                'manage_payer_data':true,
+                'account_type': account_type , 
                 'routing_number': payload["paymentInfo"]["routing_number"],
                 'account_number': payload["paymentInfo"]["account_number"],
-                'name_on_account': payload["paymentInfo"]["name_on_account"]
+                'name_on_account': payload["paymentInfo"]["name_on_account"],
+                'order_id': (new Date().getTime()),
+                'entry_mode':'KEYED',
+                'invoice_number': payload.paymentInfo.transactionId ? convertObjectIdToString(payload.paymentInfo.transactionId) : '',
             };
-
+        
             const post_data = querystring.stringify(sampleJson);
 
             var post_options = {
