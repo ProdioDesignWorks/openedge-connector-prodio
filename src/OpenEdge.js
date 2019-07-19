@@ -327,7 +327,7 @@ export default class OpenEdge {
         });
     }
     
-    payDirectWithSaveCardACH = (payload)=>{
+    payDirectWithSaveCardACH(payload){
             let _amt = '0.00';
       
             if(!isNull(payload["paymentInfo"]["downPayment"])){
@@ -365,7 +365,6 @@ export default class OpenEdge {
                       'transaction_type':"ACH",
                       'charge_type': charge_type ,
                       'payer_identifier': payload.paymentInfo.payer_identifier,
-                      'entry_mode':'KEYED',
                       'charge_total':_amt,
                       'transaction_condition_code': transaction_condition_code,
                       'account_type': account_type ,
