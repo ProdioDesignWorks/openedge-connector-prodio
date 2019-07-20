@@ -473,8 +473,8 @@ export default class OpenEdge {
                 'xweb_id': masterCredentials.X_WEB_ID,
                 'terminal_id': masterCredentials.TERMINAL_ID,
                 'auth_key': masterCredentials.AUTH_KEY,
-                'charge_type': 'QUERY_PAYMENT',
-                'transaction_type': 'CREDIT_CARD',
+                'charge_type': payloadJson.charge_type,
+                'transaction_type':payloadJson.transaction_type,
                 'order_id': payloadJson["order_id"],
                 'full_detail_flag': 'true'
             });
