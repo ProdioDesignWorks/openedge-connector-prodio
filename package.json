@@ -1,6 +1,6 @@
 {
   "name": "openedge-connector-prodio",
-  "version": "1.0.5",
+  "version": "1.0.11",
   "description": "Adapter for consuming OpenEdge API's",
   "main": "lib/index.js",
   "scripts": {
@@ -41,7 +41,7 @@
   "author": "Anurag Tiwari <anurag@prodio.in> (http://prodio.in/)",
   "license": "ISC",
   "dependencies": {
-    "axios": "^0.18.0",
+    "axios": "^0.19.0",
     "https": "^1.0.0",
     "payumoney-node": "^2.0.1",
     "user": "0.0.0",
