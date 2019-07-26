@@ -188,7 +188,7 @@ export default class OpenEdge {
                 res.setEncoding('utf8');
                 //console.log("res",res);
                 res.on('data', function(chunk) {
-                    var obj = JSON.parse(chunk);
+                    var obj = JSON.parse(JSON.stringify(chunk));
                     var paymentStateParse = {}; //Parses Payment State from result of QueryPayment.
                     chunk.split('&').forEach(function(x) {
                         var arr = x.split('=');
