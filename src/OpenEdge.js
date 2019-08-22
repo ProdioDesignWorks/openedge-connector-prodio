@@ -584,7 +584,7 @@ export default class OpenEdge {
 
     getOrderDetails(payloadJson) {
         return new Promise((resolve, reject) => {
-
+            console.log("getOrderDetails----------->openEdgePayload",payloadJson);
             var post_data = querystring.stringify({
                 'xweb_id': masterCredentials.X_WEB_ID,
                 'terminal_id': masterCredentials.TERMINAL_ID,
