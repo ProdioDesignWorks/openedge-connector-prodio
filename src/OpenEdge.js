@@ -213,6 +213,122 @@ export default class OpenEdge {
     }
 
 
+    makeDirectPayment(payload) {
+
+        let cardType = "CREDIT_CARD";
+        if (!isNull(payload["cardType"])) {
+            cardType = payload["cardType"];
+        }
+
+
+        let charge_type = "SALE";
+        if (!isNull(payload["charge_type"])) {
+            charge_type = payload["charge_type"];
+        }
+
+        let entry_mode = "KEYED";
+        if (!isNull(payload["entry_mode"])) {
+            entry_mode = payload["entry_mode"];
+        }
+        
+
+        if (cardType == "DEBIT_CARD") { charge_type = "PURCHASE"; }
+        if (cardType == "CREDIT_CARD") { charge_type = "SALE"; } 
+
+        let _amt = '0.00';
+
+        if(!isNull(payload["paymentInfo"]["downPayment"])){
+          _amt = payload["paymentInfo"]["downPayment"];
+        }else{
+          if(!isNull(payload["paymentInfo"]["totalAmount"])){
+            _amt = payload["paymentInfo"]["totalAmount"];
+          }
+        }
+
+        return new Promise((resolve, reject) => {
+            let sampleJson = {
+                'xweb_id': masterCredentials.X_WEB_ID,
+                'terminal_id': masterCredentials.TERMINAL_ID,
+                'auth_key': masterCredentials.AUTH_KEY,
+                'transaction_type': cardType,
+                'order_id': (new Date().getTime()),
+                'charge_type': charge_type,
+                'disable_framing': 'false',
+                'manage_payer_data': 'true',
+                'charge_total': _amt,
+                'purchase_order_number': payload.paymentInfo.transactionId ? convertObjectIdToString(payload.paymentInfo.transactionId) : '',
+                'invoice_number': payload.paymentInfo.transactionId ? convertObjectIdToString(payload.paymentInfo.transactionId) : '',
+                'manage_payer_data': 'TRUE',
+                'bill_customer_title_visible': 'false',
+                'bill_first_name_visible': 'false',
+                'bill_last_name_visible': 'false',
+                'bill_middle_name_visible': 'false',
+                'bill_company_visible': 'false',
+                'bill_address_one_visible': 'false',
+                'bill_address_two_visible': 'false',
+                'bill_city_visible': 'false',
+                'bill_state_or_province_visible': 'false',
+                'bill_country_code_visible': 'false',
+                'bill_postal_code_visible': 'false',
+                'order_information_visible': 'false',
+                'card_information_visible': 'false',
+                'card_information_label_visible': 'false',
+                'customer_information_visible': 'false',
+                'return_url': payload.paymentInfo.return_url ? payload.paymentInfo.return_url : '',
+                'return_target': '_self'
+            };
+            
+            if (cardType == "DEBIT_CARD") { sampleJson["account_type"] = '2'; } 
+
+            const post_data = querystring.stringify(sampleJson);
+
+            var post_options = {
+                host: 'ws.test.paygateway.com',
+                port: 443,
+                path: '/HostPayService/v1/hostpay/transactions',
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Content-Length': post_data.length
+                }
+            };
+
+            var payment_url = '';
+            var post_req = https.request(post_options, function(res) {
+                res.setEncoding('utf8');
+                //console.log("res",res);
+                res.on('data', function(chunk) {
+                    var obj = JSON.parse(chunk);
+                    payment_url = `${obj.actionUrl}${obj.sealedSetupParameters}`;
+                    if (payment_url !== undefined && payment_url !== "" && payment_url !== null) {
+                        let body = {
+                            'payRedirectUrl': payment_url,
+                        };
+                        resolve({
+                            "success": true,
+                            'body': body
+                        });
+                    } else {
+                        //console.log("obj",obj);
+                        let errorBody = {
+                            'payRedirectUrl': '',
+                        };
+                        reject({
+                            "success": false,
+                            "message": obj["errorMessage"],
+                            'body': errorBody
+                        });
+                    }
+
+                });
+            });
+            post_req.write(post_data);
+
+            post_req.end();
+        });
+    }
+
+
     makePayment(payload) {
 
         let cardType = "CREDIT_CARD";
