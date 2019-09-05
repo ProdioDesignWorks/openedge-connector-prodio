@@ -534,7 +534,7 @@ export default class OpenEdge {
                 'terminal_id': masterCredentials.TERMINAL_ID,
                 'auth_key': masterCredentials.AUTH_KEY,
                 'account_type': '2',
-                'charge_type': payload.paymentInfo.charge_type ? payload.paymentInfo.charge_type : '',, //for credit_card and "REFUND" for debit card
+                'charge_type': payload.paymentInfo.charge_type ? payload.paymentInfo.charge_type : '',
                 'transaction_type': payload.paymentInfo.transaction_type ? payload.paymentInfo.transaction_type : '',
                 'order_id': payload.paymentInfo.order_id ? Number(payload.paymentInfo.order_id) : '',
                 // 'manage_payer_data': 'true',
