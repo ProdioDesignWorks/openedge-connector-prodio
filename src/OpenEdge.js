@@ -38,6 +38,17 @@ export default class OpenEdge {
 
         masterCredentials["ACH_AUTH_KEY"] = this.config.ACHAuthKey;
         masterCredentials["ACH_TERMINAL_ID"] = this.config.ACHTerminalID;
+
+        masterCredentials["PRODUCTION_MODE"] = false;
+        masterCredentials["HOST_BASE_URL"] = 'ws.test.paygateway.com';
+
+        if(!isNull(this.config["ProductionMode"])){
+            masterCredentials["PRODUCTION_MODE"] = this.config["ProductionMode"];
+        }
+
+        if(masterCredentials["PRODUCTION_MODE"]){
+            masterCredentials["HOST_BASE_URL"] = 'ws.paygateway.com';
+        }
     }
 
     createMerchant(payloadJson) {
@@ -173,7 +184,7 @@ export default class OpenEdge {
             const post_data = querystring.stringify(sampleJson);
 
             var post_options = {
-                host: 'ws.test.paygateway.com',
+                host: masterCredentials["HOST_BASE_URL"],
                 port: 443,
                 path: '/api/v1/transactions',
                 method: 'POST',
@@ -253,11 +264,10 @@ export default class OpenEdge {
                 'transaction_type': cardType,
                 'order_id': (new Date().getTime()),
                 'charge_type': charge_type,
+                'entry_mode': entry_mode,
                 'disable_framing': 'false',
                 'manage_payer_data': 'true',
                 'charge_total': _amt,
-                'purchase_order_number': payload.paymentInfo.transactionId ? convertObjectIdToString(payload.paymentInfo.transactionId) : '',
-                'invoice_number': payload.paymentInfo.transactionId ? convertObjectIdToString(payload.paymentInfo.transactionId) : '',
                 'manage_payer_data': 'TRUE',
                 'bill_customer_title_visible': 'false',
                 'bill_first_name_visible': 'false',
@@ -283,7 +293,7 @@ export default class OpenEdge {
             const post_data = querystring.stringify(sampleJson);
 
             var post_options = {
-                host: 'ws.test.paygateway.com',
+                host: masterCredentials["HOST_BASE_URL"],
                 port: 443,
                 path: '/HostPayService/v1/hostpay/transactions',
                 method: 'POST',
@@ -388,17 +398,18 @@ export default class OpenEdge {
                 // 'return_target': '_self'
             };
             if (cardType == "CREDIT_CARD") {
-                sampleJson["manage_payer_data"] = 'true';
+                
                 sampleJson["entry_mode"] = 'KEYED';
             } else {
                 sampleJson["account_type"] = '2';
                 sampleJson["entry_mode"] = 'EMV';
             }
+            sampleJson["manage_payer_data"] = 'true';
 
             const post_data = querystring.stringify(sampleJson);
 
             var post_options = {
-                host: 'ws.test.paygateway.com',
+                host: masterCredentials["HOST_BASE_URL"],
                 port: 443,
                 path: '/HostPayService/v1/hostpay/transactions',
                 method: 'POST',
@@ -484,12 +495,13 @@ export default class OpenEdge {
                       'charge_total':_amt,
                       'transaction_condition_code': transaction_condition_code,
                       'account_type': account_type ,
+                      'manage_payer_data':'true'
                   };
       
                   const post_data = querystring.stringify(sampleJson);
       
                   var post_options = {
-                      host: 'ws.test.paygateway.com',
+                      host: masterCredentials["HOST_BASE_URL"],
                       port: 443,
                       path: '/api/v1/transactions',
                       method: 'POST',
@@ -534,7 +546,7 @@ export default class OpenEdge {
                 'terminal_id': masterCredentials.TERMINAL_ID,
                 'auth_key': masterCredentials.AUTH_KEY,
                 'account_type': '2',
-                'charge_type': payload.paymentInfo.charge_type ? payload.paymentInfo.charge_type : '',, //for credit_card and "REFUND" for debit card
+                'charge_type': payload.paymentInfo.charge_type ? payload.paymentInfo.charge_type : '',
                 'transaction_type': payload.paymentInfo.transaction_type ? payload.paymentInfo.transaction_type : '',
                 'order_id': payload.paymentInfo.order_id ? Number(payload.paymentInfo.order_id) : '',
                 // 'manage_payer_data': 'true',
@@ -547,7 +559,7 @@ export default class OpenEdge {
 
 
             var post_options = {
-                host: 'ws.test.paygateway.com',
+                host: masterCredentials["HOST_BASE_URL"],
                 port: 443,
                 path: '/HostPayService/v1/hostpay/transactions',
                 method: 'POST',
@@ -596,7 +608,7 @@ export default class OpenEdge {
             });
             //post options for Query_payment
             var post_options = {
-                host: 'ws.test.paygateway.com',
+                host: masterCredentials["HOST_BASE_URL"],
                 port: 443,
                 path: '/api/v1/transactions',
                 method: 'POST',
@@ -638,12 +650,17 @@ export default class OpenEdge {
 
     verifyCreditCard(payloadJson) {
 
+        let cardType = "CREDIT_CARD";
+        if (!isNull(payloadJson["cardType"])) {
+            cardType = payloadJson["cardType"];
+        }
+
         return new Promise((resolve, reject) => {
             let sampleJson = {
                 'xweb_id': masterCredentials.X_WEB_ID,
                 'terminal_id': masterCredentials.TERMINAL_ID,
                 'auth_key': masterCredentials.AUTH_KEY,
-                'transaction_type': 'CREDIT_CARD',
+                'transaction_type': cardType,
                 'order_id': (new Date()).getTime(),
                 'charge_type': 'AUTH',
                 'disable_framing': 'false',
@@ -674,7 +691,7 @@ export default class OpenEdge {
             const post_data = querystring.stringify(sampleJson);
 
             var post_options = {
-                host: 'ws.test.paygateway.com',
+                host: masterCredentials["HOST_BASE_URL"],
                 port: 443,
                 path: '/HostPayService/v1/hostpay/transactions',
                 method: 'POST',
@@ -721,13 +738,18 @@ export default class OpenEdge {
 
 
     payDirectlyWithSavedCard(payloadJson) {
+        let cardType = "CREDIT_CARD";
+        if (!isNull(payloadJson["cardType"])) {
+            cardType = payloadJson["cardType"];
+        }
+        
         return new Promise((resolve, reject) => {
             let inputJson = {
                 'xweb_id': masterCredentials.X_WEB_ID,
                 'terminal_id': masterCredentials.TERMINAL_ID,
                 'auth_key': masterCredentials.AUTH_KEY,
                 'charge_type': 'SALE',
-                'transaction_type': 'CREDIT_CARD',
+                'transaction_type': cardType,
                 //'order_id' : payloadJson["cardInfo"]["order_id"],
                 'order_id': new Date().getTime(),
                 'charge_total': payloadJson["paymentInfo"]["amount"],
@@ -740,7 +762,7 @@ export default class OpenEdge {
             var post_data = querystring.stringify(inputJson);
             //post options for Query_payment
             var post_options = {
-                host: 'ws.test.paygateway.com',
+                host: masterCredentials["HOST_BASE_URL"],
                 port: 443,
                 path: '/api/v1/transactions',
                 method: 'POST',
@@ -776,7 +798,100 @@ export default class OpenEdge {
         return 'this is test';
     }
 
-    saveCardForPayer(payloadJson) {}
+    saveCardForPayer(payloadJson) {
+        let cardType = "CREDIT_CARD";
+        if (!isNull(payloadJson["cardType"])) {
+            cardType = payloadJson["cardType"];
+        }
+        let entryMode = "KEYED";
+        if (!isNull(payloadJson["entryMode"])) {
+            entryMode = payloadJson["entryMode"];
+        }
+        return new Promise((resolve, reject) => {
+            let sampleJson = {
+                'xweb_id': masterCredentials.X_WEB_ID,
+                'terminal_id': masterCredentials.TERMINAL_ID,
+                'auth_key': masterCredentials.AUTH_KEY,
+                'transaction_type': cardType,
+                'order_id': (new Date()).getTime(),
+                'charge_type': 'AUTH',
+                'disable_framing': 'false',
+                'entry_mode': entryMode,
+                'charge_total': '0.00',
+                'manage_payer_data': 'TRUE',
+                'bill_customer_title_visible': 'false',
+                'bill_first_name_visible': 'false',
+                'bill_last_name_visible': 'false',
+                'bill_middle_name_visible': 'false',
+                'bill_company_visible': 'false',
+                'bill_address_one_visible': 'false',
+                'bill_address_two_visible': 'false',
+                'bill_city_visible': 'false',
+                'bill_state_or_province_visible': 'false',
+                'bill_country_code_visible': 'false',
+                'bill_postal_code_visible': 'false',
+                'order_information_visible': 'false',
+                'card_information_visible': 'false',
+                'card_information_label_visible': 'false',
+                'customer_information_visible': 'false',
+                "submit_button_label":"Save Card",
+                "charge_type_label":"Transaction Type",
+                "charge_type_row_visible":false,
+                "charge_total_visible": false,
+                "input-field-height":"25px",
+                "font-size":"16px",
+                "btn-height":"35px",
+                "btn-width":"140px",
+                'return_url': payloadJson.return_url ? payloadJson.return_url : '',
+                'return_target': '_self'
+            };
+
+            const post_data = querystring.stringify(sampleJson);
+
+            var post_options = {
+                host: masterCredentials["HOST_BASE_URL"],
+                port: 443,
+                path: '/HostPayService/v1/hostpay/transactions',
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Content-Length': post_data.length
+                }
+            };
+
+            var payment_url = '';
+            var post_req = https.request(post_options, function(res) {
+                res.setEncoding('utf8');
+                // console.log("res",res);
+                res.on('data', function(chunk) {
+                    var obj = JSON.parse(chunk);
+                    payment_url = `${obj.actionUrl}${obj.sealedSetupParameters}`;
+                    if (payment_url !== undefined && payment_url !== "" && payment_url !== null) {
+                        let body = {
+                            'payRedirectUrl': payment_url,
+                        };
+                        resolve({
+                            "success": true,
+                            'body': body
+                        });
+                    } else {
+                        let errorBody = {
+                            'payRedirectUrl': '',
+                        };
+                        reject({
+                            "success": false,
+                            "message": obj["errorMessage"],
+                            'body': errorBody
+                        });
+                    }
+
+                });
+            });
+            post_req.write(post_data);
+
+            post_req.end();
+        });
+    }
 
     removeCard(payloadJson) {
         return new Promise((resolve, reject) => {
@@ -790,7 +905,7 @@ export default class OpenEdge {
             });
             //post options for Query_payment
             var post_options = {
-                host: 'ws.test.paygateway.com',
+                host: masterCredentials["HOST_BASE_URL"],
                 port: 443,
                 path: '/api/v1/transactions',
                 method: 'POST',
