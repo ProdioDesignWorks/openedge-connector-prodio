@@ -759,6 +759,8 @@ export default class OpenEdge {
                 inputJson["ecommerce_indicator"] = payloadJson["paymentInfo"]["ecommerce_indicator"];
             }
 
+            console.log(" \n \n [payDirectlyWithSavedCard : inputJson ]",inputJson);
+
             var post_data = querystring.stringify(inputJson);
             //post options for Query_payment
             var post_options = {
@@ -781,6 +783,8 @@ export default class OpenEdge {
                         var arr = x.split('=');
                         arr[1] && (paymentStateParse[arr[0]] = arr[1]);
                     });
+
+                    console.log(" \n \n [payDirectlyWithSavedCard : paymentStateParse ]",paymentStateParse);
 
                     resolve(paymentStateParse);
                 });
