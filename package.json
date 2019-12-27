@@ -1,6 +1,6 @@
 {
   "name": "openedge-connector-prodio",
-  "version": "2.0.7",
+  "version": "2.0.8",
   "description": "Adapter for consuming OpenEdge API's",
   "main": "lib/index.js",
   "scripts": {
